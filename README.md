@@ -1,4 +1,4 @@
-#  Nextcloud LEMP Deployment Suite (Ubuntu 24.04 LTS)
+#  Nextcloud LEMP easy homelab (Ubuntu 24.04 LTS)
 
 Добро пожаловать в комплексный репозиторий по развертыванию персонального облачного хранилища **Nextcloud** на базе производительного веб-стека **LEMP** (Linux, Nginx, MariaDB, PHP 8.3) с защитой трафика через самоподписанный SSL-сертификат.
 
