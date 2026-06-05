@@ -1,268 +1,56 @@
-# 🛠️ Ручная установка Nextcloud на LEMP (Ubuntu 24.04 LTS)
+# 📂 Nextcloud LEMP Deployment Suite (Ubuntu 24.04 LTS)
 
-Пошаговое руководство по самостоятельной ручной настройке облачного хранилища [Nextcloud](https://nextcloud.com) в стеке **LEMP** (**L**inux, **E**nginx, **M**ariaDB, **P**HP 8.3) с защитой трафика через самоподписанный SSL-сертификат.
+[![Platform: Ubuntu](https://shields.io)](https://ubuntu.com)
+[![Web Server: Nginx](https://shields.io)](https://nginx.org)
+[![Database: MariaDB](https://shields.io)](https://mariadb.org)
+[![PHP: 8.3](https://shields.io)](https://php.net)
+[![License: MIT](https://shields.io)](LICENSE)
 
-> [!NOTE]
-> Данная инструкция идеально подходит для развертывания локальной виртуальной машины (например, в VirtualBox), тестового стенда или домашнего сервера.
+Добро пожаловать в комплексный репозиторий по развертыванию персонального облачного хранилища **Nextcloud** на базе производительного веб-стека **LEMP** (Linux, Nginx, MariaDB, PHP 8.3) с защитой трафика через самоподписанный SSL-сертификат.
 
----
-
-## 📋 Исходные данные (Пример стенда)
-
-Перед началом установки определитесь с сетевыми параметрами. В данном руководстве используются следующие значения:
-* **Хост/Виртуализация**: VirtualBox (сетевой интерфейс в режиме «Сетевой мост»)
-* **Локальная подсеть**: `192.168.24.0/24`
-* **Основной шлюз**: `192.168.24.1`
-* **Статический IP сервера**: `192.168.24.11` *(замените на свой)*
-* **Версия PHP**: 8.3
+Проект разработан как для тех, кому нужно развернуть готовое решение за 2 минуты, так и для тех, кто хочет детально разобраться в ручной настройке каждого компонента системы.
 
 ---
 
-## 🧭 Пошаговая инструкция по установке
+## 🧭 Выберите способ развертывания
 
-### Шаг 1. Настройка статического IP (Netplan)
-Для надежной работы сервера зафиксируйте его сетевой адрес. Отредактируйте конфигурационный файл:
-```bash
-sudo nano /etc/netplan/00-installer-config.yaml
-```
+> [!TIP]
+> Нажмите на заголовок любой из карточек ниже, чтобы перейти к соответствующему файлу документации.
 
-Приведите файл к следующему виду (соблюдайте отступы в 2 или 4 пробела, знаки табуляции использовать запрещено):
-```yaml
-network:
-  version: 2
-  ethernets:
-    enp0s3:
-      addresses:
-        - 192.168.24.11/24
-      routes:
-        - to: default
-          via: 192.168.24.1
-      nameservers:
-        addresses:
-```
-Примените изменения конфигурации сети:
-```bash
-sudo netplan apply
-```
+
+| 🚀 [Вариант 1. Автоматический скрипт](./autoinstaller/) | 🛠️ [Вариант 2. Пошаговый ручной гайд](./manual_setup/) |
+| :--- | :--- |
+| **Для кого:** Для быстрой установки на "чистый" сервер без рутины. | **Для кого:** Для глубокого понимания процесса, кастомизации или домашних стендов. |
+| * Полностью автоматическая сборка. <br>* Установка за 1 команду (Python 3). <br>* Преднастроенный тюнинг `php.ini`. <br>* Авто-генерация SSL-сертификатов на 10 лет. <br>* Тихая установка Nextcloud через утилиту `occ`. | * Полный контроль над каждым шагом. <br>* Ручная настройка сети (`netplan`). <br>* Пошаговое конфигурирование базы данных MariaDB. <br>* Оптимизация виртуального хоста Nginx (HTTP/2). <br>* Веб-мастер завершения установки. |
+| 👉 **[Перейти к авто-инсталлятору](./autoinstaller/)** | 👉 **[Перейти к ручной инструкции](./manual_setup/)** |
 
 ---
 
-### Шаг 2. Установка базового стека LEMP
-Обновите индексы пакетов и установите веб-сервер, базу данных и вспомогательные утилиты:
-```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt install -y nginx mariadb-server mariadb-client unzip wget curl software-properties-common
-```
+## 🏗️ Архитектура развертываемого стека
 
-#### Добавление репозитория и установка PHP 8.3
-Для Ubuntu 24.04 рекомендуется использовать проверенный PPA-репозиторий от Ondřej Surý:
-```bash
-sudo add-apt-repository -y ppa:ondrej/php
-sudo apt update
-sudo apt install -y php8.3-fpm php8.3-mysql php8.3-curl php8.3-gd \
-  php8.3-mbstring php8.3-xml php8.3-zip php8.3-intl php8.3-bcmath \
-  php8.3-gmp php8.3-imagick
-```
+Вне зависимости от выбранного вами пути, на выходе вы получите отказоустойчивую и оптимизированную конфигурацию:
 
-Активируйте автоматический запуск всех служб при загрузке системы:
-```bash
-sudo systemctl enable --now nginx mariadb php8.3-fpm
-```
+1. **Веб-сервер**: `Nginx` с принудительным редиректом `HTTP (80) → HTTPS (443)`, поддержкой протокола `HTTP/2` и встроенными заголовками безопасности `HSTS` против перехвата трафика.
+2. **Интерпретатор**: `PHP 8.3-FPM`, настроенный на обработку тяжелых файлов (до 500 МБ) с активированным кэшированием `OPcache` для высокой скорости работы интерфейса.
+3. **База данных**: `MariaDB` (ветка MySQL) с поддержкой кодировки `utf8mb4_general_ci` для корректного отображения любых символов и эмодзи в именах файлов.
+4. **Фоновые задачи**: Системный планировщик `Cron`, выполняющий оптимизацию внутренних индексов Nextcloud каждые 5 минут от имени пользователя `www-data`.
+5. **Безопасность**: Активный локальный брандмауэр `UFW`, блокирующий все порты, кроме веб-трафика.
 
 ---
 
-### Шаг 3. Первичная настройка СУБД MariaDB
-Запустите интерактивный скрипт для базовой защиты базы данных:
-```bash
-sudo mysql_secure_installation
-```
-*(Задайте пароль суперпользователя root для БД, удалите анонимных пользователей, запретите удаленный вход для root и удалите тестовую базу данных).*
+## 🔒 Переход в Production (Глобальная сеть)
 
-#### Создание базы данных для Nextcloud
-Войдите в консоль MariaDB под администратором:
-```bash
-sudo mysql
-```
-Выполните следующие SQL-запросы для создания изолированной базы данных и пользователя:
-```sql
-CREATE DATABASE nextcloud CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-CREATE USER 'nextclouduser'@'localhost' IDENTIFIED BY 'StrongPassword123!';
-GRANT ALL PRIVILEGES ON nextcloud.* TO 'nextclouduser'@'localhost';
-FLUSH PRIVILEGES;
-EXIT;
-```
-> [!IMPORTANT]
-> Замените `StrongPassword123!` на ваш собственный секретный пароль.
+Оба руководства используют самоподписанный SSL-сертификат, что отлично подходит для локальной работы, но вызывает предупреждение в браузере. При выходе в интернет выполните следующие действия:
+1. Замените самоподписанный сертификат на доверенный бесплатный от **Let's Encrypt** с помощью утилиты `certbot`:
+   ```bash
+   sudo apt install certbot python3-certbot-nginx -y
+   sudo certbot --nginx -d ваш_домен.ru
+   ```
+2. Настройте проброс портов (**Port Forwarding**) 80 и 443 на вашем роутере на локальный IP-адрес сервера.
+3. Не забудьте обновить массив `trusted_domains` в файле `/var/www/nextcloud/config/config.php`, добавив туда ваше доменное имя.
 
 ---
 
-### Шаг 4. Загрузка и размещение Nextcloud
-Скачайте актуальный стабильный релиз с официального сайта, распакуйте его в рабочую директорию веб-сервера и передайте права пользователю `www-data`:
-```bash
-cd /tmp
-wget https://download.nextcloud.com/server/releases/latest.zip
-sudo unzip latest.zip -d /var/www/
-sudo chown -R www-data:www-data /var/www/nextcloud
-```
+## 📝 Лицензия
 
----
-
-### Шаг 5. Оптимизация параметров PHP 8.3
-Для стабильной обработки больших файлов и тяжелых скриптов необходимо скорректировать дефолтные лимиты PHP. Откройте конфигурационный файл:
-```bash
-sudo nano /etc/php/8.3/fpm/php.ini
-```
-
-Найдите (используйте `Ctrl + W` для поиска в nano) и измените значения следующих параметров:
-```ini
-memory_limit = 512M
-upload_max_filesize = 500M
-post_max_size = 500M
-max_execution_time = 300
-date.timezone = Europe/Moscow
-opcache.enable=1
-opcache.memory_consumption=128
-opcache.max_accelerated_files=10000
-opcache.revalidate_freq=1
-```
-Примените настройки перезапуском обработчика процессов:
-```bash
-sudo systemctl restart php8.3-fpm
-```
-
----
-
-### Шаг 6. Генерация самоподписанного SSL-сертификата
-Создайте директорию для хранения ключей и сгенерируйте пару (сертификат + приватный ключ) со сроком действия 10 лет (3650 дней):
-```bash
-sudo mkdir -p /etc/nginx/ssl
-sudo openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
-  -keyout /etc/nginx/ssl/nextcloud.key \
-  -out /etc/nginx/ssl/nextcloud.crt \
-  -subj "/CN=192.168.24.11"
-```
-
----
-
-### Шаг 7. Конфигурация веб-сервера Nginx
-Создайте новый файл конфигурации виртуального хоста для вашего облака:
-```bash
-sudo nano /etc/nginx/sites-available/nextcloud
-```
-
-Вставьте в него следующий полноценный конфиг:
-```nginx
-server {
-    listen 80;
-    listen [::]:80;
-    server_name 192.168.24.11;
-    return 301 https://$host$request_uri;
-}
-
-server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
-    server_name 192.168.24.11;
-
-    # Включение HTTP/2 для современных версий Nginx
-    http2 on;
-
-    ssl_certificate     /etc/nginx/ssl/nextcloud.crt;
-    ssl_certificate_key /etc/nginx/ssl/nextcloud.key;
-
-    root /var/www/nextcloud;
-    client_max_body_size 500M;
-    fastcgi_buffers 64 4K;
-
-    # Настройка заголовков безопасности (HSTS)
-    add_header Strict-Transport-Security "max-age=15552000; includeSubDomains" always;
-
-    location / {
-        rewrite ^ /index.php;
-    }
-
-    location ~ ^/(?:build|tests|config|lib|3rdparty|templates|data)/ { deny all; }
-    location ~ ^/(?:\.|autotest|occ|issue|indie|db_|console) { deny all; }
-
-    location ~ ^/(?:index|remote|public|cron|core/ajax/update|status|ocs/v[12]|updater/.+|oc[ms]-provider/.+)\.php(?:$|/) {
-        fastcgi_split_path_info ^(.+?\.php)(/.*)$;
-        set $path_info $fastcgi_path_info;
-        try_files $fastcgi_script_name =404;
-        include fastcgi_params;
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-        fastcgi_param PATH_INFO $path_info;
-        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
-        fastcgi_intercept_errors on;
-    }
-
-    location ~* \.(?:css|js|woff2?|svg|gif|png|jpg|ico)$ {
-        try_files $uri /index.php$request_uri;
-        expires 6M;
-        access_log off;
-        add_header Cache-Control "public, immutable";
-    }
-}
-```
-
-#### Активация конфигурации
-Создайте символическую ссылку для включения сайта, удалите дефолтный шаблон Nginx и перезапустите службу:
-```bash
-sudo ln -s /etc/nginx/sites-available/nextcloud /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t && sudo systemctl reload nginx
-```
-
----
-
-### Шаг 8. Завершение установки через веб-интерфейс
-
-1. Откройте веб-браузер и перейдите по адресу: `https://192.168.24.11`.
-2. Браузер выведет предупреждение безопасности о самоподписанном сертификате — нажмите *«Дополнительно» -> «Перейти на сайт (небезопасно)»* (добавьте в исключения).
-3. На открывшейся странице заполните форму первоначальной настройки:
-   * **Учетная запись администратора**: задайте имя администратора и надежный пароль.
-   * **База данных**: выберите пункт **MySQL/MariaDB** и укажите данные из Шага 3:
-     * *Пользователь БД*: `nextclouduser`
-     * *Пароль БД*: `StrongPassword123!`
-     * *Имя БД*: `nextcloud`
-     * *Хост*: `localhost`
-4. Нажмите кнопку **«Завершить установку»** и дождитесь инициализации интерфейса.
-
----
-
-### Шаг 9. Финальные штрихи (Пост-настройка)
-
-#### Проверка доверенных доменов (trusted_domains)
-Вручную проверьте, зафиксирован ли ваш IP-адрес в конфигурационном файле приложения:
-```bash
-sudo nano /var/www/nextcloud/config/config.php
-```
-Внутри массива должен присутствовать ваш адрес:
-```php
-'trusted_domains' => 
-array (
-  0 => '192.168.24.11',
-),
-```
-
-#### Настройка планировщика Cron
-Nextcloud требует регулярного выполнения фоновых задач оптимизации. Переведите их на системный крон пользователя веб-сервера:
-```bash
-sudo crontab -u www-data -e
-```
-Добавьте в самый конец файла следующую строку (выполнение каждые 5 минут):
-```text
-*/5 * * * * php -f /var/www/nextcloud/cron.php
-```
-
-#### Настройка встроенного файрвола (UFW)
-Разрешите входящие соединения для веб-трафика и активируйте защиту межсетевого экрана:
-```bash
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw --force enable
-```
-
----
-
-## ✅ Готово к эксплуатации!
-
+Этот проект распространяется под открытой лицензией **MIT**. Вы можете свободно использовать, изменять и распространять этот код в любых целях.
