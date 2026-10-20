@@ -33,7 +33,7 @@
    ```bash
    sudo nano /etc/netplan/00-installer-config.yaml
    ```
-3. Приведите файл к следующему виду (замените `enp0s3` на имя вашего интерфейса, `192.168.200.1` на шлюз, а `192.168.200.10` на IP вашего DC/DNS):
+3. Приведите файл к следующему виду (замените `enp0s3` на имя вашего интерфейса, `192.168.200.10` на шлюз, а `192.168.200.10` на IP вашего DC/DNS):
    ```yaml
    network:
      version: 2
@@ -44,9 +44,9 @@
            - 192.168.200.31/24
          routes:
            - to: default
-             via: 192.168.200.1
+             via: 192.168.200.10
          nameservers:
-           addresses: [192.168.200.10, 8.8.8.8]
+           addresses: [192.168.200.10, 1.1.1.1]
    ```
 4. Примените настройки:
    ```bash
@@ -84,7 +84,7 @@ sudo apt install php8.3-fpm php8.3-mysql php8.3-curl php8.3-gd php8.3-mbstring p
 2. Создайте базу и пользователя (пароль `StrongPassword123!` замените на свой):
    ```sql
    CREATE DATABASE nextcloud CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-   CREATE USER 'nextcloud'@'localhost' IDENTIFIED BY 'StrongPassword123!';
+   CREATE USER 'nextcloud'@'localhost' IDENTIFIED BY 'Qq1234567890!';
    GRANT ALL PRIVILEGES ON nextcloud.* TO 'nextcloud'@'localhost';
    FLUSH PRIVILEGES;
    EXIT;
@@ -253,7 +253,7 @@ set -e # Остановить выполнение при любой ошибк�
 SERVER_IP="192.168.200.31" 
 DB_NAME="nextcloud"
 DB_USER="nextcloud"
-DB_PASS="StrongPassword123!" # ОБЯЗАТЕЛЬНО СМЕНИТЕ НА СВОЙ ПАРОЛЬ!
+DB_PASS="Qq1234567890!" # ОБЯЗАТЕЛЬНО СМЕНИТЕ НА СВОЙ ПАРОЛЬ!
 NC_DIR="/var/www/html/nextcloud"
 SSL_DIR="/etc/nginx/ssl"
 
