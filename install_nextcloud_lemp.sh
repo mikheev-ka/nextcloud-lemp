@@ -11,9 +11,20 @@ set -e # Остановить выполнение при любой ошибк�
 SERVER_IP="192.168.200.31" 
 DB_NAME="nextcloud"
 DB_USER="nextcloud"
-DB_PASS="StrongPassword123!" # ОБЯЗАТЕЛЬНО СМЕНИТЕ НА СВОЙ ПАРОЛЬ!
 NC_DIR="/var/www/html/nextcloud"
 SSL_DIR="/etc/nginx/ssl"
+
+# Пароль БД не хранится в скрипте: передайте его через переменную окружения
+# (sudo DB_PASS='ВашПароль' ./install_nextcloud_lemp.sh) или введите при запросе.
+DB_PASS="${DB_PASS:-}"
+if [ -z "$DB_PASS" ]; then
+  read -rsp "Введите пароль для пользователя БД '${DB_USER}': " DB_PASS
+  echo
+fi
+if [ -z "$DB_PASS" ]; then
+  echo "Ошибка: пароль БД не задан."
+  exit 1
+fi
 
 # Проверка, что скрипт запущен от root
 if [ "$EUID" -ne 0 ]; then
